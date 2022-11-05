@@ -1,0 +1,6 @@
+We want to create solitare!
+
+Setting up the board:
+  1. Begins with 7 piles, each one increasing by one card
+  2. Create space for 4 piles, each one for each suit of cards
+ 
