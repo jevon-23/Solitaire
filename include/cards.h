@@ -23,23 +23,22 @@ enum card_values {
 enum suits { diamonds, hearts, clubs, spades };
 
 typedef struct card {
-  char str;             // str repr of card
-  enum card_values val; // enum value of card
-  enum suits suit;      // suit of class
-  char suit_str;
-  char suit_color; 
-  bool hidden;
-
-
-} card;
+char str;             // str repr of card
+enum card_values val; // enum value of card
+enum suits suit;      // suit of class
+char suit_str;        // string repr of suit
+char suit_color;      // The color corresponding to this suit (R/B)
+bool hidden;          // Has this card been revealed to player / in use
+}
+card;
 
 void testing();
 
 /* Creates a deck of all of the cards. Every card every suit */
-card **make_all_cards();
+card *make_all_cards();
 
 /* Create a card for A-K of the given SUIT */
-card **make_suit(enum suits suit);
+card *make_suit(enum suits suit);
 
 /* Make a card struct using based on SUIT and VALUE
  * where SUIT is the card suit and VALUE is the value of the card */

@@ -101,22 +101,22 @@ card *make_card(enum suits suit, enum card_values value) {
   return c;
 }
 
-card **make_suit(enum suits suit) {
-  card **deck = (card **)malloc(sizeof(card *) * SUIT_SIZE);
+card *make_suit(enum suits suit) {
+  card *deck = (card *)malloc(sizeof(card ) * SUIT_SIZE);
   if (deck == NULL) {
       error(NULL, MALLOC_ERR);
       return NULL;
   }
 
   for (int value = _A; value <= _K; value++) {
-    *(deck + value) = make_card(suit, value);
+    *(deck + value) = *(make_card(suit, value));
   }
 
   return deck;
 }
 
-card **make_all_cards() {
-  card **deck = (card **)malloc(sizeof(card *) * DECK_SIZE);
+card *make_all_cards() {
+  card *deck = (card *)malloc(sizeof(card) * DECK_SIZE);
   if (deck == NULL) {
       error(NULL, MALLOC_ERR);
       return NULL;
@@ -124,7 +124,7 @@ card **make_all_cards() {
 
   for (int suit = diamonds, offset = 0; suit <= spades; suit++, offset++) {
       int off = offset * SUIT_SIZE;
-      card **suit_deck = make_suit(suit);
+      card *suit_deck = make_suit(suit);
       memcpy((deck + off), suit_deck, sizeof(card) * SUIT_SIZE);
   }
 
@@ -138,10 +138,10 @@ void testing() {
   s = diamonds;
   cv = _5;
 
-  card **deck = make_all_cards();
+  card *deck = make_all_cards();
 
   for (int i = 0; i < 52; i++) {
     printf("i: %d, card->str: %c ~ card->val: %d ~ card->suit: %d\n",
-           i, (*(deck + i))->str, (*(deck + i))->val, (*(deck + i))->suit);
+           i, ((deck + i))->str, ((deck + i))->val, ((deck + i))->suit);
   }
 }

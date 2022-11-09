@@ -1,0 +1,13 @@
+include/.cards.h.swp
+tags
+include/.game_board.h.swp
+include/.utils.h.swp
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+solitare
+src/.main.c.swp
+src/cards/.cards.c.swp
+src/game_board/.game_board.c.swp
+src/utils/.utils.c.swp
