@@ -45,4 +45,11 @@ card *make_suit(enum suits suit);
 card *make_card(enum suits suit, enum card_values value);
 
 void print_card(card *c);
+
+/* Maps a card_value VAL to a string representation */
+char card_suit_to_str(enum suits suit);
+
+/* Maps a card_value VAL to a string representation */
+char card_value_to_str(enum card_values val);
+
 #endif

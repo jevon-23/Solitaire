@@ -44,7 +44,7 @@ char card_suit_to_str(enum suits suit) {
 
 /* Maps a card_value VAL to a string representation */
 char card_value_to_str(enum card_values val) {
-  switch ((int)val) {
+  switch ((int)val-1) {
   case _A:
     return 'A';
   case _2:
@@ -64,7 +64,7 @@ char card_value_to_str(enum card_values val) {
   case _9:
     return '9';
   case _10:
-    return '0';
+    return 'X';
   case _J:
     return 'J';
   case _Q:
@@ -79,9 +79,9 @@ char card_value_to_str(enum card_values val) {
 /* Make a card struct using based on SUIT and VALUE
  * where SUIT is the card suit and VALUE is the value of the card */
 card *make_card(enum suits suit, enum card_values value) {
-  char card_value_string = card_value_to_str(value);
+  char card_value_string = card_value_to_str(value+1);
   if (card_value_string == -1) {
-    error("Failed to convert card value to a string\n", -1);
+    error("Failed to convert card value to a string:\n", -1);
     return NULL;
   }
 
