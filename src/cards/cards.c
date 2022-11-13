@@ -128,7 +128,6 @@ card *make_all_cards() {
       memcpy((deck + off), suit_deck, sizeof(card) * SUIT_SIZE);
   }
 
-  // printf("no exit early\n");
   return deck;
 }
 

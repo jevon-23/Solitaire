@@ -84,12 +84,12 @@ void print_table(game_board *gb) {
         continue;
       }
       pile *p = (gb->table + pile_no);
-      if (p->len <= i) {
+      if (p->len == i) {
         printf("_:_|");
         finished[pile_no] = true;
         continue;
       }
-      card *c = get_card(p, i);
+      card *c = get_card(p, p->len - i - 1);
       printf("%c:%c|",
               card_value_to_str(c->val),
               card_suit_to_str(c->suit));
@@ -167,8 +167,15 @@ pile *make_pile(game_board *gb, enum pile_type type, int pile_no) {
       }
 
       /* Update pile, and our used array */
-      insert_pile(&p, (gb->deck->cards + rand_card));
+      card *c = (gb->deck->cards + rand_card);
+      if (pile_index == pile_no-1) {
+          c->hidden = false;
+          print_card(c);
+      }
+      insert_pile(&p, c);
       gb->used[rand_card] = true;
+
+
     }
     break;
 
@@ -258,6 +265,13 @@ card *draw_one(game_board *gb) {
 void test() {
   game_board *gb = init_game_board();
   print_game_board(gb);
+
+  for (int i = 1; i < 8; i++) {
+
+    pile *p = (gb->table + i);
+    card *c = get_card(p, 0);
+    print_card(c);
+  }
 
   // for (int i = 0; i < 25; i++) {
 

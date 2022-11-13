@@ -17,7 +17,7 @@ typedef struct pile {
 } pile;
 
 typedef struct game_board {
-  pile table[7];         // cards not on the table
+  pile table[8];         // cards not on the table
   pile foundation[4];    // piles for foundation 2 win
   pile *stock;        // Cards that have not been used in foundation
   pile *deck;            // All 52 cards in the deck
