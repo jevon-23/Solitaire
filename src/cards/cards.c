@@ -90,6 +90,7 @@ card *make_card(enum suits suit, enum card_values value) {
     error(NULL, MALLOC_ERR);
     return NULL;
   }
+  // printf("no exit early\n");
 
   c->str = card_value_string;
   c->val = value+1; // enum starts @ 0, we want to start @ 1

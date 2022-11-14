@@ -18,17 +18,19 @@ enum card_values {
     _10,
     _J,
     _Q,
-    _K };
+    _K,
+    _E
+};
 
-enum suits { diamonds, hearts, clubs, spades };
+enum suits { diamonds, hearts, clubs, spades, empty };
 
 typedef struct card {
-char str;             // str repr of card
-enum card_values val; // enum value of card
-enum suits suit;      // suit of class
-char suit_str;        // string repr of suit
-char suit_color;      // The color corresponding to this suit (R/B)
-bool hidden;          // Has this card been revealed to player / in use
+  char str;             // str repr of card
+  enum card_values val; // enum value of card
+  enum suits suit;      // suit of class
+  char suit_str;        // string repr of suit
+  char suit_color;      // The color corresponding to this suit (R/B)
+  bool hidden;          // Has this card been revealed to player / in use
 }
 card;
 

@@ -6,7 +6,7 @@
 #define MAX_PILE_LEN SUIT_SIZE
 #define MAX_STOCK_LEN 24 // (52 - (7 + 6 + 5 + 4 + 3 + 2 + 1))
 
-enum pile_type { DECK_PILE, TABLE_PILE, FOUNDATION_PILE , STOCK_PILE };
+enum pile_type { DECK_PILE, TABLE_PILE, FOUNDATION_PILE, STOCK_PILE , STOCK_PILE_REC};
 
 typedef struct pile {
   card *cards;         // Pile of the cards that we have
@@ -17,15 +17,18 @@ typedef struct pile {
 } pile;
 
 typedef struct game_board {
-  pile table[8];         // cards not on the table
-  pile foundation[4];    // piles for foundation 2 win
-  pile *stock;        // Cards that have not been used in foundation
-  pile *deck;            // All 52 cards in the deck
-  bool used[52];         // True if card has been used
+  pile table[8];            // cards not on the table
+  pile foundation[4];       // piles for foundation 2 win
+  pile *stock;              // Cards that have not been used in foundation
+  pile *stock_recycle;      // Recycle bin for the stock
+  card *top_stock_card;     // Card the player has access to on the stock
+  card *top_three_stock[3]; //  Next 3 cards on the stock
+  pile *deck;               // All 52 cards in the deck
+  bool used[52];            // True if card has been used
 } game_board;
 
 game_board *init_game_board();
-card *get_card(pile *p, int index);
+card *pile_get_card(pile *p, int index);
 
 void test();
 #endif

@@ -16,6 +16,8 @@ int processCLI(int argc, char **argv, char **filename) {
 int main(int arg, char *argv[]) {
   // testing();
   test();
+
+  // game_board *gb = init_game_board();
   printf("Successful build!\n");
   return 0;
 }

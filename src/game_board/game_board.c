@@ -35,12 +35,20 @@ bool check_finished(bool *finished, int len) {
     return true;
 }
 
-void print_stock_deck(game_board *gb) {
+void print_stock_deck(game_board *gb, enum pile_type rec) {
   int printed = 0;
 
-  printf("printing left over deck\n");
-  for (int i = 0; i < gb->stock->len; i++) {
-    card *c = get_card(gb->stock, i);
+  pile *p = gb->stock;
+  if (rec == STOCK_PILE_REC) {
+      p = gb->stock_recycle;
+      printf("printing recycle deck\n");
+  } else {
+    printf("printing left over deck\n");
+
+  }
+
+  for (int i = 0; i < p->len; i++) {
+    card *c = pile_get_card(p, i);
     printf("%c:%c|", 
             card_value_to_str(c->val), card_suit_to_str(c->suit));
     printed++;
@@ -64,7 +72,7 @@ void print_foundational_piles(game_board *gb) {
         finished[j] = true;
         continue;
       }
-      print_card(get_card(found, i));
+      print_card(pile_get_card(found, i));
     }
     printf("\n");
 
@@ -89,10 +97,12 @@ void print_table(game_board *gb) {
         finished[pile_no] = true;
         continue;
       }
-      card *c = get_card(p, p->len - i - 1);
+      card *c = pile_get_card(p, p->len - i - 1);
+      if (!c->hidden )
       printf("%c:%c|",
               card_value_to_str(c->val),
               card_suit_to_str(c->suit));
+      else printf("*:*|");
     }
     printf("\n");
 
@@ -105,21 +115,60 @@ void print_game_board(game_board *gb) {
   printf("Foundation: \n");
   print_foundational_piles(gb);
   print_table(gb);
-  print_stock_deck(gb);
+  print_stock_deck(gb, gb->stock->type);
+  print_stock_deck(gb, gb->stock_recycle->type);
 }
 
 /**********************/
 /* Pile functionality */
 /**********************/
-card *get_card(pile *p, int index) {
+card *pile_get_card(pile *p, int index) {
   if (index >= p->len)
     return NULL;
 
   return (p->cards + p->max_len - p->len + index);
 }
 
+int pile_index_of(pile *p, card *c) {
+    for (int i = 0; i < p->len; i++) {
+        card *c2 = pile_get_card(p, i);
+        if (c->val == c2->val && c->suit == c2->suit)
+            return i;
+    }
+    return -1;
+}
+
+card *pile_pop_upto(pile *p, int n) {
+    if (n == 0) {
+        error("Cannot pop 0 values\n", -1);
+        return NULL;
+    } else if (p->len == 0)
+        return NULL;
+    else if (n > p->len) {
+        error("Trying to pop more than whats left in pile\n", -1);
+        return NULL;
+    }
+
+    card *out = (card *)malloc(sizeof(card) * n);
+
+    for (int i = 0; i < n; i++) {
+        card *c = pile_get_card(p, 0);
+        p->len--;
+        // print_card(c);
+        memcpy((out + i), c, sizeof(card));
+        printf("\n");
+    }
+
+    card *next_card = pile_get_card(p, 0);
+
+    if (next_card != NULL && next_card->hidden)
+        next_card->hidden = false;
+    return out;
+}
+
 /* Insert the card on to the front of the pile */
 void insert_pile(pile **p, card *c) {
+  // print_card(c);
   *((*p)->cards + (*p)->max_len - (*p)->len - 1) = *c;
   (*p)->len++;
 }
@@ -170,7 +219,7 @@ pile *make_pile(game_board *gb, enum pile_type type, int pile_no) {
       card *c = (gb->deck->cards + rand_card);
       if (pile_index == pile_no-1) {
           c->hidden = false;
-          print_card(c);
+          // print_card(c);
       }
       insert_pile(&p, c);
       gb->used[rand_card] = true;
@@ -203,6 +252,12 @@ pile *make_pile(game_board *gb, enum pile_type type, int pile_no) {
     }
 
     free(indicies);
+    break;
+
+    case STOCK_PILE_REC:
+      p->cards = (card *)malloc(sizeof(card) * MAX_STOCK_LEN);
+      p->len = 0;
+      p->max_len = MAX_STOCK_LEN;
     break;
 
     default:
@@ -239,43 +294,115 @@ game_board *init_game_board() {
   }
   printf("Finsihed generating starting piles\n");
 
+  /* Generate the stock cards pile */
   printf("Generating stock pile\n");
   gb->stock = make_pile(gb, STOCK_PILE, 0);
   printf("Finished generating stock pile\n");
 
-  
-
-  /* Generate the stock cards pile */
+  printf("Generating stock recycle bin\n");
+  gb->stock_recycle = make_pile(gb, STOCK_PILE_REC, 0);
   return gb;
 }
 
+
+bool recycle_deck(game_board *gb) {
+    // Copy stock from recycle in reverse to get og back
+    printf("inside of rec\n");
+
+    for (int i = 0; i < gb->stock_recycle->len; i++) {
+        card *c = pile_get_card(gb->stock_recycle, i);
+        print_card(c);
+        insert_pile(&gb->stock, c);
+    }
+
+    gb->stock_recycle->len = 0;
+    return true;
+}
+
 card *draw_one(game_board *gb) {
-    card *c = get_card(gb->stock, gb->stock->index);
+    card *c = pile_pop_upto(gb->stock, 1);
     if (c == NULL) {
         gb->stock->index = 0;
-        c = get_card(gb->stock, gb->stock->index);
+        c = pile_get_card(gb->stock, gb->stock->index);
         if (c == NULL) {
             error("Couldn't get card out of deck or no more cards left", -1);
+          if (!recycle_deck(gb))
+                  return NULL;
+          c = pile_get_card(gb->stock, 0);
         }
     }
-    gb->stock->index++;
+    gb->top_stock_card = c;
+    insert_pile(&gb->stock_recycle, c);
     return c;
+}
+
+/* Transfer NUM_TRANSFER cards from SRC to DST */
+bool transfer_pile(pile *dst, pile *src, int num_transfer) {
+    if (num_transfer > (src)->len || (dst)->max_len < (dst)->len + num_transfer) 
+        return false;
+
+    card *dst_transfer_card = pile_get_card(dst, 0);
+    card *src_receiver_card = pile_get_card(src, num_transfer-1);
+
+    if (dst_transfer_card->hidden || src_receiver_card->hidden) {
+        error("Cannot move onto a card that is not hidden\n", -1);
+        printf("dst card: "); 
+        print_card(dst_transfer_card);
+        printf("\nsrc card: ");
+        print_card(src_receiver_card);
+        printf("\n");
+        return false;
+    }
+
+    if (dst_transfer_card->val != src_receiver_card->val + 1) {
+        error("Cannot move onto a card that is not in inc. order\n", -1);
+        return false;
+    }
+
+    if (dst_transfer_card->suit_color != src_receiver_card->suit_color) {
+        error("Connot move onto a card that is not the opposite color \n", -1);
+        return false;
+    }
+    
+    card *popped_cards = pile_pop_upto(src, num_transfer);
+
+    for (int i = num_transfer-1; i >= 0; i--) 
+        insert_pile(&dst, (popped_cards + i));
+    return true;
 }
 
 void test() {
   game_board *gb = init_game_board();
   print_game_board(gb);
 
-  for (int i = 1; i < 8; i++) {
+  // pile *p = (pile *)(gb->table + 3);
+  // pile *p2 = (pile *)(gb->table + 4);
+  // card *c = pile_get_card(p2, 1);
+  // c->hidden = false;
+  // c = pile_get_card(p2, 2);
+  // c->hidden = false;
+  // print_game_board(gb);
+  // transfer_pile(p, p2, 3);
+  // print_game_board(gb);
 
-    pile *p = (gb->table + i);
-    card *c = get_card(p, 0);
-    print_card(c);
-  }
+  // for (int i = 1; i < 8; i++) {
 
-  // for (int i = 0; i < 25; i++) {
-
-  //   card *c = draw_one(gb);
-  //   print_card(c);
+  //   pile *p = (gb->table + i);
+  //   for (int j = 0; j < 7; j++) {
+  //     card *c = pile_get_card(p, j);
+  //     if (c != NULL) 
+  //       print_card(c);
+  //   }
+  //   printf("\n");
   // }
+
+  for (int i = 0; i < 25; i++) {
+
+      printf("fraw\n");
+    card *c = draw_one(gb);
+    print_card(c);
+    print_stock_deck(gb, gb->stock->type);
+    print_stock_deck(gb, gb->stock_recycle->type);
+
+  }
 }
