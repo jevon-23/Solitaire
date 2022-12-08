@@ -263,6 +263,7 @@ pile *make_pile(game_board *gb, enum pile_type type, int pile_no) {
         }
         card *c = (gb->deck->cards + *(indicies + rand_card));
         insert_pile(&p, c);
+        check[rand_card] = true;
     }
 
     free(indicies);
