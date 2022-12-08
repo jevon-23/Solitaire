@@ -32,6 +32,7 @@ card *pile_get_card(pile *p, int index);
 void print_game_board(game_board *gb);
 card *draw_one(game_board *gb);
 bool transfer_pile(pile *dst, pile *src, int num_transfer);
+bool transfer_pile_to_foundation(pile *dst, pile *src, int num_transfer);
 void test();
 card *pile_pop_upto(pile *p, int n);
 #endif

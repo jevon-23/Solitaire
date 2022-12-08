@@ -60,36 +60,32 @@ void print_stock_deck(game_board *gb, enum pile_type rec) {
 
 void print_foundational_piles(game_board *gb) {
   printf("Foundation: \n");
+  printf(" 0 | 1 | 2 | 3 |\n");
   bool finished[4] = {false, false, false, false};
 
   // foundational piles
-  for (int i = 0; i < SUIT_SIZE; i++) {
-    for (int j = 0; j < 4; j++) {
-      pile *found = (gb->foundation + j);
-      if (finished[j])
-        continue;
-      if (found->len <= i) {
-        printf("_:_|");
-        finished[j] = true;
-        continue;
-      }
-      card *c = pile_get_card(found, i);
-    printf("%c:%c|", 
-            card_value_to_str(c->val), card_suit_to_str(c->suit));
+  for (int j = 0; j < 4; j++) {
+    pile *found = (gb->foundation + j);
+    if (finished[j])
+      continue;
+    if (found->len <= 0) {
+      printf("_:_|");
+      finished[j] = true;
+      continue;
     }
-    printf("\n");
-
-    if (check_finished(finished, 4))
-      break;
+    card *c = pile_get_card(found, 0);
+    printf("%c:%c|", card_value_to_str(c->val), card_suit_to_str(c->suit));
   }
+  printf("\n");
 }
 
 void print_table(game_board *gb) {
   bool finished[8] = {true, false, false, false, false, false, false, false};
 
   printf("printing out the current table of the game\n");
-  printf(" 1 | 2 | 3 | 4 | 5 | 6 | 7 |\n");
+  printf("| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |\n");
   for (int i = 0; i < SUIT_SIZE; i++) {
+    printf("| %d |", i+1);
     for (int pile_no = 1; pile_no < 8; pile_no++) {
       if (finished[pile_no]) {
         printf("_:_|");
@@ -131,8 +127,8 @@ void print_game_board(game_board *gb) {
   print_foundational_piles(gb);
   print_stock_top(gb);
   print_table(gb);
-  print_stock_deck(gb, gb->stock->type);
-  print_stock_deck(gb, gb->stock_recycle->type);
+  // print_stock_deck(gb, gb->stock->type);
+  // print_stock_deck(gb, gb->stock_recycle->type);
 }
 
 /**********************/
@@ -364,6 +360,58 @@ card *draw_one(game_board *gb) {
 }
 
 /* Transfer NUM_TRANSFER cards from SRC to DST */
+bool transfer_pile_to_foundation(pile *dst, pile *src, int num_transfer) {
+    printf("transfer 2 foundation\n");
+    if (num_transfer > 1 || num_transfer > (src)->len || (dst)->max_len < (dst)->len + num_transfer) 
+        return false;
+
+    printf("dst->len = %d, src->len = %d\n", dst->len, src->len);
+
+    /* If the foundation is empty, check to see if it is an ace */
+    if (dst->len == 0) {
+        card *c = pile_get_card(src, 0);
+        if (c->val == _A+1) {
+          c = pile_pop_upto(src, 1);
+          insert_pile(&dst, c);
+          return true;
+        } else {
+            printf("have to move an ace into empty foundation pile\n");
+            return false;
+        }
+    }
+
+    card *dst_transfer_card = pile_get_card(dst, 0);
+    card *src_receiver_card = pile_get_card(src, 0);
+    if ((dst_transfer_card->hidden || src_receiver_card->hidden)) {
+        error("Cannot move onto a card that is not hidden\n", -1);
+        printf("dst card: "); 
+        print_card(dst_transfer_card);
+        printf("\nsrc card: ");
+        print_card(src_receiver_card);
+        printf("\n");
+        return false;
+    }
+    if (((int)dst_transfer_card->val+1 != (int) src_receiver_card->val)) {
+        error("Cannot move onto a card that is not in inc. order\n", -1);
+        printf("dst card: \n"); 
+        print_card(dst_transfer_card);
+        printf("\nsrc card: ");
+        print_card(src_receiver_card);
+        printf("\n");
+
+        // printf("src->val = %d, dst->val = %d, src")
+        return false;
+    }
+
+    if (dst_transfer_card->suit_color != src_receiver_card->suit_color) {
+        error("Cannot move onto a card into the foundation that is not the same color \n", -1);
+        return false;
+    }
+    card *c = pile_pop_upto(src, 1);
+    insert_pile(&dst, c);
+    return true;
+}
+/* Transfer NUM_TRANSFER cards from SRC to DST */
 bool transfer_pile(pile *dst, pile *src, int num_transfer) {
     if (num_transfer > (src)->len || (dst)->max_len < (dst)->len + num_transfer) 
         return false;
@@ -399,7 +447,12 @@ bool transfer_pile(pile *dst, pile *src, int num_transfer) {
     }
 
     if (dst_present && dst_transfer_card->suit_color == src_receiver_card->suit_color) {
-        error("Connot move onto a card that is not the opposite color \n", -1);
+        error("Cannot move onto a card that is not the opposite color \n", -1);
+        return false;
+    }
+
+    if (dst_present && dst->len == 0 && src_receiver_card->val != _K+1 && num_transfer != 1) {
+        printf("Can only move a King into an empty pile\n");
         return false;
     }
     

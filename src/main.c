@@ -84,7 +84,7 @@ move *process_input(char *input, size_t len) {
   char input_parse[3][3];
   int input_parse_len = 0;
   for (char *token = strtok_r(input, " ", &input_ptr);
-       token != NULL || input_parse_len < 3;
+       token != NULL && input_parse_len < 3;
        token = strtok_r(NULL, " ", &input_ptr), input_parse_len++) {
     strncpy(*(input_parse + input_parse_len), token, strlen(token));
     if (strlen(token) == 1) 
@@ -92,6 +92,9 @@ move *process_input(char *input, size_t len) {
     else 
       input_parse[input_parse_len][2] = '\0';
   }
+
+  if (input_parse_len != 3)
+      return NULL;
 
   m->src_pile = (char *)malloc(sizeof(char) * strlen(input_parse[0]));
   m->dst_pile = (char *)malloc(sizeof(char) * strlen(input_parse[2]));
@@ -101,16 +104,19 @@ move *process_input(char *input, size_t len) {
   /* Set the type of transfer we are doing */
   if (m->dst_pile[0] == 'f') {
     m->type = _TRANSFER_FOUNDATION;
+    m->num_move = 1;
+    m->move_fn = &transfer_pile_to_foundation;
   } else if (m->src_pile[0] == 's') {
     m->type = _TRANSFER_STOCK;
     m->num_move = 1;
+    m->move_fn = &transfer_pile;
   } else {
     m->type = _TRANSFER_PILE;
     m->num_move = atoi(input_parse[1]);
+    m->move_fn = &transfer_pile;
   }
 
   printf("src: %s, dst: %s\n", m->src_pile, m->dst_pile);
-  m->move_fn = &transfer_pile;
 
   return m;
 }
@@ -140,6 +146,10 @@ int main(int arg, char *argv[]) {
 
     /* Go from input to a move */
     move *next_move = process_input(input, input_len);
+    if (next_move == NULL) {
+        printf("Invalid move input: %s\n", input);
+        continue;
+    }
     printf("top of loop\n");
 
     switch ((int)next_move->type) {
@@ -153,10 +163,22 @@ int main(int arg, char *argv[]) {
     case _TRANSFER_PILE:;
       src = input_pile_to_pile(gb, next_move->src_pile);
       dst = input_pile_to_pile(gb, next_move->dst_pile);
+      if (src == NULL || dst == NULL) {
+          printf("Invalid piles past in\n");
+          continue;
+      }
       next_move->move_fn(dst, src, next_move->num_move);
       break;
     case _TRANSFER_FOUNDATION:
-      printf("not implemented yet\n");
+      src = input_pile_to_pile(gb, next_move->src_pile);
+      dst = input_pile_to_pile(gb, next_move->dst_pile);
+      if (src == NULL || dst == NULL) {
+          printf("Invalid piles past in\n");
+          continue;
+      }
+      next_move->move_fn(dst, src, next_move->num_move);
+      if (src->type == STOCK_PILE_REC)
+        gb->top_stock_card = pile_get_card(gb->stock_recycle, 0);
       break;
 
     case _TRANSFER_STOCK:
