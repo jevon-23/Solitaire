@@ -31,24 +31,35 @@ typedef struct move {
 } move;
 
 pile *input_pile_to_pile(game_board *gb, char *input_pile) {
-  if (!strcmp("p0\0", input_pile))
-      return gb->table;
-  else if (!strcmp("p1\0", input_pile))
-      return (gb->table + 1);
+  /* Piles */
+  if (!strcmp("p1\0", input_pile))
+    return (gb->table + 1);
   else if (!strcmp("p2\0", input_pile))
-      return (gb->table + 2);
+    return (gb->table + 2);
   else if (!strcmp("p3\0", input_pile))
-      return (gb->table + 3);
+    return (gb->table + 3);
   else if (!strcmp("p4\0", input_pile))
-      return (gb->table + 4);
+    return (gb->table + 4);
   else if (!strcmp("p5\0", input_pile))
-      return (gb->table + 5);
+    return (gb->table + 5);
   else if (!strcmp("p6\0", input_pile))
-      return (gb->table + 6);
+    return (gb->table + 6);
   else if (!strcmp("p7\0", input_pile))
-      return (gb->table + 7);
-  else 
-      return NULL;
+    return (gb->table + 7);
+  /* Foundations */
+  else if (!strcmp("f0\0", input_pile))
+    return (gb->foundation);
+  else if (!strcmp("f1\0", input_pile))
+    return (gb->foundation + 1);
+  else if (!strcmp("f2\0", input_pile))
+    return (gb->foundation + 2);
+  else if (!strcmp("f3\0", input_pile))
+    return (gb->foundation + 3);
+  /* Stock */
+  else if (!strcmp("s\0", input_pile))
+    return gb->stock_recycle;
+  else
+    return NULL;
 }
 
 move *process_input(char *input, size_t len) {
@@ -76,23 +87,28 @@ move *process_input(char *input, size_t len) {
        token != NULL || input_parse_len < 3;
        token = strtok_r(NULL, " ", &input_ptr), input_parse_len++) {
     strncpy(*(input_parse + input_parse_len), token, strlen(token));
-    input_parse[input_parse_len][2] = '\0';
+    if (strlen(token) == 1) 
+      input_parse[input_parse_len][1] = '\0'; // if token == s
+    else 
+      input_parse[input_parse_len][2] = '\0';
   }
 
   m->src_pile = (char *)malloc(sizeof(char) * strlen(input_parse[0]));
   m->dst_pile = (char *)malloc(sizeof(char) * strlen(input_parse[2]));
   strncpy(m->src_pile, input_parse[0], strlen(input_parse[0]));
-  m->num_move = atoi(input_parse[1]);
   strncpy(m->dst_pile, input_parse[2], strlen(input_parse[2]));
 
   /* Set the type of transfer we are doing */
-  if (!strcmp(m->dst_pile, T_FOUNDATION)) {
-      m->type = _TRANSFER_FOUNDATION;
-  } else if (!strcmp(m->src_pile, T_STOCK)) {
-      m->type = _TRANSFER_STOCK;
+  if (m->dst_pile[0] == 'f') {
+    m->type = _TRANSFER_FOUNDATION;
+  } else if (m->src_pile[0] == 's') {
+    m->type = _TRANSFER_STOCK;
+    m->num_move = 1;
   } else {
     m->type = _TRANSFER_PILE;
+    m->num_move = atoi(input_parse[1]);
   }
+
   printf("src: %s, dst: %s\n", m->src_pile, m->dst_pile);
   m->move_fn = &transfer_pile;
 
@@ -104,12 +120,6 @@ void processCLI(int argc, char **argv) {
     exit(-1);
 }
 
-/* TODO: We need to make a front end for the everything
- *       Do we use sdl? js? If we want to use another
- *       lang, which is the point of this project, we need to
- *       make an api for interfacing from c -> lang.
- */
-
 int main(int arg, char *argv[]) {
   processCLI(arg, argv);
 
@@ -118,6 +128,8 @@ int main(int arg, char *argv[]) {
 
   game_board *gb = init_game_board();
   int num_plays = 0;
+  pile *src = NULL;
+  pile *dst = NULL;
   while (true) {
     print_game_board(gb);
 
@@ -128,7 +140,7 @@ int main(int arg, char *argv[]) {
 
     /* Go from input to a move */
     move *next_move = process_input(input, input_len);
-    printf("back inside of main\n");
+    printf("top of loop\n");
 
     switch ((int)next_move->type) {
     case _QUIT:
@@ -139,10 +151,19 @@ int main(int arg, char *argv[]) {
       next_move->draw_fn(gb);
       break;
     case _TRANSFER_PILE:;
-      pile *src = input_pile_to_pile(gb, next_move->src_pile);
-      pile *dst = input_pile_to_pile(gb, next_move->dst_pile);
+      src = input_pile_to_pile(gb, next_move->src_pile);
+      dst = input_pile_to_pile(gb, next_move->dst_pile);
       next_move->move_fn(dst, src, next_move->num_move);
+      break;
+    case _TRANSFER_FOUNDATION:
+      printf("not implemented yet\n");
+      break;
 
+    case _TRANSFER_STOCK:
+      src = input_pile_to_pile(gb, next_move->src_pile);
+      dst = input_pile_to_pile(gb, next_move->dst_pile);
+      next_move->move_fn(dst, src, next_move->num_move);
+      gb->top_stock_card = pile_get_card(gb->stock_recycle, 0);
       break;
     default:
       printf("invalid move, try again\n");

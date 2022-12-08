@@ -334,6 +334,7 @@ bool recycle_deck(game_board *gb) {
 
     for (int i = 0; i < gb->stock_recycle->len; i++) {
         card *c = pile_get_card(gb->stock_recycle, i);
+        c->hidden = true;
         print_card(c);
         insert_pile(&gb->stock, c);
     }
@@ -353,10 +354,11 @@ card *draw_one(game_board *gb) {
             error("Couldn't get card out of deck or no more cards left", -1);
           if (!recycle_deck(gb))
                   return NULL;
-          c = pile_get_card(gb->stock, 0);
+          c = pile_pop_upto(gb->stock, 1);
         }
     }
     gb->top_stock_card = c;
+    gb->top_stock_card->hidden = false;
     insert_pile(&gb->stock_recycle, c);
     return c;
 }
