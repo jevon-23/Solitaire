@@ -22,13 +22,15 @@ typedef struct game_board {
   pile *stock;              // Cards that have not been used in foundation
   pile *stock_recycle;      // Recycle bin for the stock
   card *top_stock_card;     // Card the player has access to on the stock
-  card *top_three_stock[3]; //  Next 3 cards on the stock
+  card *top_three_stock[3]; // Next 3 cards on the stock
   pile *deck;               // All 52 cards in the deck
   bool used[52];            // True if card has been used
 } game_board;
 
 game_board *init_game_board();
 card *pile_get_card(pile *p, int index);
-
+void print_game_board(game_board *gb);
+card *draw_one(game_board *gb);
+bool transfer_pile(pile *dst, pile *src, int num_transfer);
 void test();
 #endif

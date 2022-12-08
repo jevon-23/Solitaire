@@ -4,3 +4,20 @@ Setting up the board:
   1. Begins with 7 piles, each one increasing by one card
   2. Create space for 4 piles, each one for each suit of cards
  
+
+
+
+
+
+
+ Move set:
+  1. d: draw card
+  2. p_src num p_dst
+     - p0 2 p2 # move 2 cards from p0 -> p2
+  3. p_src foundtion
+     - p0 _f
+  4. stock 2 p_dst   
+     - s 2 p0
+
+
+ 
