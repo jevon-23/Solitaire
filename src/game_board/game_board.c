@@ -299,7 +299,7 @@ game_board *init_game_board() {
 
   printf("Generating foundational piles\n");
   /* Generate foundation piles */
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     pile *found = make_pile(gb, FOUNDATION_PILE, 0);
     memcpy((gb->foundation + i), found, (sizeof(pile)));
   }
@@ -370,6 +370,7 @@ bool transfer_pile_to_foundation(pile *dst, pile *src, int num_transfer) {
 
     /* If the foundation is empty, check to see if it is an ace */
     if (dst->len == 0) {
+        printf("inside of if\n");
         card *c = pile_get_card(src, 0);
         if (c->val == _A+1) {
           c = pile_pop_upto(src, 1);
