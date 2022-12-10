@@ -267,6 +267,7 @@ pile *make_pile(game_board *gb, enum pile_type type, int pile_no) {
     }
 
     free(indicies);
+    free(check);
     break;
 
     case STOCK_PILE_REC:
@@ -320,19 +321,36 @@ game_board *init_game_board() {
 
   printf("Generating stock recycle bin\n");
   gb->stock_recycle = make_pile(gb, STOCK_PILE_REC, 0);
+  printf("Finished generating stock recycle bin\n");
   return gb;
+}
+
+bool check_game_over(game_board *gb) {
+    // Check to see if the table is cleared
+    for (int i = 1; i < 8; i++) {
+        if ((gb->table + i)->len != 0)
+            return false;
+    }
+
+    // Check to see if the stock is empty
+    if (gb->stock->len != 0 || gb->stock_recycle != 0)
+        return false;
+    // Check to see if the foudnations are full
+    for (int i = 0; i < 4; i++) {
+        if ((gb->foundation + i)->len != (gb->foundation + i)->max_len)
+            return false;
+    }
+
+    return true;
 }
 
 
 /* When we run out of cards in our stock pike, recycle it */
 bool recycle_deck(game_board *gb) {
     // Copy stock from recycle in reverse to get og back
-    printf("inside of rec\n");
-
     for (int i = 0; i < gb->stock_recycle->len; i++) {
         card *c = pile_get_card(gb->stock_recycle, i);
         c->hidden = true;
-        print_card(c);
         insert_pile(&gb->stock, c);
     }
 
@@ -366,11 +384,10 @@ bool transfer_pile_to_foundation(pile *dst, pile *src, int num_transfer) {
     if (num_transfer > 1 || num_transfer > (src)->len || (dst)->max_len < (dst)->len + num_transfer) 
         return false;
 
-    printf("dst->len = %d, src->len = %d\n", dst->len, src->len);
+    // printf("dst->len = %d, src->len = %d\n", dst->len, src->len);
 
     /* If the foundation is empty, check to see if it is an ace */
     if (dst->len == 0) {
-        printf("inside of if\n");
         card *c = pile_get_card(src, 0);
         if (c->val == _A+1) {
           c = pile_pop_upto(src, 1);
@@ -413,6 +430,7 @@ bool transfer_pile_to_foundation(pile *dst, pile *src, int num_transfer) {
     insert_pile(&dst, c);
     return true;
 }
+
 /* Transfer NUM_TRANSFER cards from SRC to DST */
 bool transfer_pile(pile *dst, pile *src, int num_transfer) {
     if (num_transfer > (src)->len || (dst)->max_len < (dst)->len + num_transfer) 
@@ -421,8 +439,10 @@ bool transfer_pile(pile *dst, pile *src, int num_transfer) {
     card *dst_transfer_card = pile_get_card(dst, 0);
     card *src_receiver_card = pile_get_card(src, num_transfer-1);
 
+
     if (src_receiver_card == NULL)
         return false;
+
     
     bool dst_present = dst_transfer_card != NULL;
 
@@ -443,8 +463,6 @@ bool transfer_pile(pile *dst, pile *src, int num_transfer) {
         printf("\nsrc card: ");
         print_card(src_receiver_card);
         printf("\n");
-
-        // printf("src->val = %d, dst->val = %d, src")
         return false;
     }
 
@@ -453,7 +471,7 @@ bool transfer_pile(pile *dst, pile *src, int num_transfer) {
         return false;
     }
 
-    if (dst_present && dst->len == 0 && src_receiver_card->val != _K+1 && num_transfer != 1) {
+    if (dst->len == 0 && src_receiver_card->val != _K+1) {
         printf("Can only move a King into an empty pile\n");
         return false;
     }
@@ -465,41 +483,3 @@ bool transfer_pile(pile *dst, pile *src, int num_transfer) {
     return true;
 }
 
-void test() {
-  game_board *gb = init_game_board();
-  print_game_board(gb);
-
-  pile *p = (pile *)(gb->table + 3);
-  pile *p2 = (pile *)gb->foundation;
-  // pile *p2 = (pile *)(gb->table + 4);
-  // card *c = pile_get_card(p2, 1);
-  // c->hidden = false;
-  // c = pile_get_card(p2, 2);
-  // c->hidden = false;
-  // print_game_board(gb);
-  printf("about to transfer\n");
-  transfer_pile(p2, p, 1);
-  printf("finished transfer\n");
-  print_game_board(gb);
-
-  // for (int i = 1; i < 8; i++) {
-
-  //   pile *p = (gb->table + i);
-  //   for (int j = 0; j < 7; j++) {
-  //     card *c = pile_get_card(p, j);
-  //     if (c != NULL) 
-  //       print_card(c);
-  //   }
-  //   printf("\n");
-  // }
-
-  // for (int i = 0; i < 25; i++) {
-
-  //     printf("fraw\n");
-  //   card *c = draw_one(gb);
-  //   print_card(c);
-  //   print_stock_deck(gb, gb->stock->type);
-  //   print_stock_deck(gb, gb->stock_recycle->type);
-
-  // }
-}

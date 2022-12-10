@@ -139,6 +139,10 @@ int main(int arg, char *argv[]) {
   while (true) {
     print_game_board(gb);
 
+    if (check_game_over(gb)) {
+        printf("You won the game!\n");
+        return 0;
+    }
     /* Get the next input */
     char *input = NULL;
     size_t input_len = 0;

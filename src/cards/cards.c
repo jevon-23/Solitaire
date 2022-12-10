@@ -132,16 +132,3 @@ card *make_all_cards() {
   return deck;
 }
 
-void testing() {
-  enum card_values cv;
-  enum suits s;
-  s = diamonds;
-  cv = _5;
-
-  card *deck = make_all_cards();
-
-  for (int i = 0; i < 52; i++) {
-    printf("i: %d, card->str: %c ~ card->val: %d ~ card->suit: %d\n",
-           i, ((deck + i))->str, ((deck + i))->val, ((deck + i))->suit);
-  }
-}
